@@ -1,0 +1,18 @@
+[package]
+name = "syn_builder"
+version = "0.1.0"
+edition = "2021"
+description = "Builder functions for `syn` structures and enums to ease the generation of Rust code."
+repository = "https://github.com/andrewlowndes/syn_builder"
+license = "MIT OR Apache-2.0"
+keywords = ["syn", "quote", "meta-programming"]
+categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
+
+[lib]
+
+[dependencies]
+proc-macro2 = "1.0.64"
+syn = {version="2.0.25", features=["full"]}
+
+[dev-dependencies]
+quote = "1.0.29"
