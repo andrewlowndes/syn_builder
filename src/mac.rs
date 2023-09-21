@@ -15,6 +15,16 @@ pub fn r#macro(path: impl IntoPath, tokens: impl Into<TokenStream>) -> Macro {
     }
 }
 
+pub trait MacroBuilder {
+    fn new(path: impl IntoPath, tokens: impl Into<TokenStream>) -> Self;
+}
+
+impl MacroBuilder for Macro {
+    fn new(path: impl IntoPath, tokens: impl Into<TokenStream>) -> Self {
+        r#macro(path, tokens)
+    }
+}
+
 pub fn macro_delimiter_paren_variant() -> MacroDelimiter {
     MacroDelimiter::Paren(Default::default())
 }

@@ -1,4 +1,4 @@
-use crate::{attrs_builder, IntoItem};
+use crate::{attrs_builder, macros::AttrsPropsBuilder, IntoItem};
 use syn::File;
 
 pub fn file<I: IntoItem>(items: impl IntoIterator<Item = I>) -> File {
@@ -11,11 +11,16 @@ pub fn file<I: IntoItem>(items: impl IntoIterator<Item = I>) -> File {
 
 attrs_builder!(File);
 
-pub trait FileBuilder {
+pub trait FileBuilder: AttrsPropsBuilder {
+    fn new<I: IntoItem>(items: impl IntoIterator<Item = I>) -> Self;
     fn shebang(self, shebang: impl Into<String>) -> Self;
 }
 
 impl FileBuilder for File {
+    fn new<I: IntoItem>(items: impl IntoIterator<Item = I>) -> Self {
+        file(items)
+    }
+
     fn shebang(self, shebang: impl Into<String>) -> Self {
         Self {
             shebang: Some(shebang.into()),

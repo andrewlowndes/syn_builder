@@ -1,4 +1,8 @@
-use crate::{attrs_builder, mutability_builder, qself_builder, IntoIdent, IntoPath, IntoType};
+use crate::{
+    attrs_builder,
+    macros::{AttrsPropsBuilder, MutabilityPropsBuilder, QSelfPropsBuilder},
+    mutability_builder, qself_builder, IntoIdent, IntoPath, IntoType,
+};
 use proc_macro2::TokenStream;
 use syn::{
     FieldPat, Member, Pat, PatConst, PatIdent, PatLit, PatMacro, PatOr, PatParen, PatPath,
@@ -61,12 +65,17 @@ pub fn pat_ident(ident: impl IntoIdent) -> PatIdent {
 attrs_builder!(PatIdent);
 mutability_builder!(PatIdent);
 
-pub trait PatIdentBuilder {
+pub trait PatIdentBuilder: AttrsPropsBuilder + MutabilityPropsBuilder {
+    fn new(ident: impl IntoIdent) -> Self;
     fn by_ref(self, by_ref: bool) -> Self;
     fn subpat(self, subpat: impl IntoPat) -> Self;
 }
 
 impl PatIdentBuilder for PatIdent {
+    fn new(ident: impl IntoIdent) -> Self {
+        pat_ident(ident)
+    }
+
     fn by_ref(self, by_ref: bool) -> Self {
         Self {
             by_ref: by_ref.then(Default::default),
@@ -92,6 +101,16 @@ pub fn pat_or<C: IntoPat>(cases: impl IntoIterator<Item = C>) -> PatOr {
 
 attrs_builder!(PatOr);
 
+pub trait PatOrBuilder: AttrsPropsBuilder {
+    fn new<C: IntoPat>(cases: impl IntoIterator<Item = C>) -> Self;
+}
+
+impl PatOrBuilder for PatOr {
+    fn new<C: IntoPat>(cases: impl IntoIterator<Item = C>) -> Self {
+        pat_or(cases)
+    }
+}
+
 pub fn pat_paren(pat: impl IntoPat) -> PatParen {
     PatParen {
         attrs: Default::default(),
@@ -101,6 +120,16 @@ pub fn pat_paren(pat: impl IntoPat) -> PatParen {
 }
 
 attrs_builder!(PatParen);
+
+pub trait PatParenBuilder: AttrsPropsBuilder {
+    fn new(pat: impl IntoPat) -> Self;
+}
+
+impl PatParenBuilder for PatParen {
+    fn new(pat: impl IntoPat) -> Self {
+        pat_paren(pat)
+    }
+}
 
 pub fn pat_reference(pat: impl IntoPat) -> PatReference {
     PatReference {
@@ -114,6 +143,16 @@ pub fn pat_reference(pat: impl IntoPat) -> PatReference {
 attrs_builder!(PatReference);
 mutability_builder!(PatReference);
 
+pub trait PatReferenceBuilder: AttrsPropsBuilder + MutabilityPropsBuilder {
+    fn new(pat: impl IntoPat) -> Self;
+}
+
+impl PatReferenceBuilder for PatReference {
+    fn new(pat: impl IntoPat) -> Self {
+        pat_reference(pat)
+    }
+}
+
 pub fn pat_rest() -> PatRest {
     PatRest {
         attrs: Default::default(),
@@ -122,6 +161,16 @@ pub fn pat_rest() -> PatRest {
 }
 
 attrs_builder!(PatRest);
+
+pub trait PatRestBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
+}
+
+impl PatRestBuilder for PatRest {
+    fn new() -> Self {
+        pat_rest()
+    }
+}
 
 pub fn pat_slice<P: IntoPat>(elems: impl IntoIterator<Item = P>) -> PatSlice {
     PatSlice {
@@ -132,6 +181,16 @@ pub fn pat_slice<P: IntoPat>(elems: impl IntoIterator<Item = P>) -> PatSlice {
 }
 
 attrs_builder!(PatSlice);
+
+pub trait PatSliceBuilder: AttrsPropsBuilder {
+    fn new<P: IntoPat>(elems: impl IntoIterator<Item = P>) -> Self;
+}
+
+impl PatSliceBuilder for PatSlice {
+    fn new<P: IntoPat>(elems: impl IntoIterator<Item = P>) -> Self {
+        pat_slice(elems)
+    }
+}
 
 pub fn pat_struct<F: Into<FieldPat>>(
     path: impl IntoPath,
@@ -150,11 +209,15 @@ pub fn pat_struct<F: Into<FieldPat>>(
 attrs_builder!(PatStruct);
 qself_builder!(PatStruct);
 
-pub trait PatStructBuilder {
+pub trait PatStructBuilder: AttrsPropsBuilder + QSelfPropsBuilder {
+    fn new<F: Into<FieldPat>>(path: impl IntoPath, fields: impl IntoIterator<Item = F>) -> Self;
     fn rest(self, rest: PatRest) -> Self;
 }
 
 impl PatStructBuilder for PatStruct {
+    fn new<F: Into<FieldPat>>(path: impl IntoPath, fields: impl IntoIterator<Item = F>) -> Self {
+        pat_struct(path, fields)
+    }
     fn rest(self, rest: PatRest) -> Self {
         Self {
             rest: Some(rest),
@@ -173,6 +236,16 @@ pub fn pat_tuple<E: IntoPat>(elems: impl IntoIterator<Item = E>) -> PatTuple {
 
 attrs_builder!(PatTuple);
 
+pub trait PatTupleBuilder: AttrsPropsBuilder {
+    fn new<E: IntoPat>(elems: impl IntoIterator<Item = E>) -> Self;
+}
+
+impl PatTupleBuilder for PatTuple {
+    fn new<E: IntoPat>(elems: impl IntoIterator<Item = E>) -> Self {
+        pat_tuple(elems)
+    }
+}
+
 pub fn pat_tuple_struct<E: IntoPat>(
     path: impl IntoPath,
     elems: impl IntoIterator<Item = E>,
@@ -189,6 +262,16 @@ pub fn pat_tuple_struct<E: IntoPat>(
 attrs_builder!(PatTupleStruct);
 qself_builder!(PatTupleStruct);
 
+pub trait PatTupleStructBuilder: AttrsPropsBuilder + QSelfPropsBuilder {
+    fn new<E: IntoPat>(path: impl IntoPath, elems: impl IntoIterator<Item = E>) -> Self;
+}
+
+impl PatTupleStructBuilder for PatTupleStruct {
+    fn new<E: IntoPat>(path: impl IntoPath, elems: impl IntoIterator<Item = E>) -> Self {
+        pat_tuple_struct(path, elems)
+    }
+}
+
 pub fn pat_type(pat: impl IntoPat, ty: impl IntoType) -> PatType {
     PatType {
         attrs: Default::default(),
@@ -200,6 +283,16 @@ pub fn pat_type(pat: impl IntoPat, ty: impl IntoType) -> PatType {
 
 attrs_builder!(PatType);
 
+pub trait PatTypeBuilder: AttrsPropsBuilder {
+    fn new(pat: impl IntoPat, ty: impl IntoType) -> Self;
+}
+
+impl PatTypeBuilder for PatType {
+    fn new(pat: impl IntoPat, ty: impl IntoType) -> Self {
+        pat_type(pat, ty)
+    }
+}
+
 pub fn pat_wild() -> PatWild {
     PatWild {
         attrs: Default::default(),
@@ -208,6 +301,16 @@ pub fn pat_wild() -> PatWild {
 }
 
 attrs_builder!(PatWild);
+
+pub trait PatWildBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
+}
+
+impl PatWildBuilder for PatWild {
+    fn new() -> Self {
+        pat_wild()
+    }
+}
 
 pub fn field_pat(member: impl Into<Member>, pat: impl IntoPat) -> FieldPat {
     FieldPat {
@@ -220,11 +323,16 @@ pub fn field_pat(member: impl Into<Member>, pat: impl IntoPat) -> FieldPat {
 
 attrs_builder!(FieldPat);
 
-pub trait FieldPatBuilder {
+pub trait FieldPatBuilder: AttrsPropsBuilder {
+    fn new(member: impl Into<Member>, pat: impl IntoPat) -> Self;
     fn colon_token(self, colon_token: bool) -> Self;
 }
 
 impl FieldPatBuilder for FieldPat {
+    fn new(member: impl Into<Member>, pat: impl IntoPat) -> Self {
+        field_pat(member, pat)
+    }
+
     fn colon_token(self, colon_token: bool) -> Self {
         Self {
             colon_token: colon_token.then(Default::default),

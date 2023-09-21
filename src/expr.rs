@@ -1,6 +1,11 @@
 use crate::{
-    attrs_builder, label_builder, mutability_builder, output_builder, qself_builder, IntoBinOp,
-    IntoIdent, IntoLit, IntoPat, IntoPath, IntoType, IntoUnOp,
+    attrs_builder, label_builder,
+    macros::{
+        AttrsPropsBuilder, LabelPropsBuilder, MutabilityPropsBuilder, OutputPropsBuilder,
+        QSelfPropsBuilder,
+    },
+    mutability_builder, output_builder, qself_builder, IntoBinOp, IntoIdent, IntoLit, IntoPat,
+    IntoPath, IntoType, IntoUnOp,
 };
 use proc_macro2::TokenStream;
 use syn::{
@@ -87,6 +92,16 @@ pub fn expr_array<I: IntoExpr>(elems: impl IntoIterator<Item = I>) -> ExprArray 
 
 attrs_builder!(ExprArray);
 
+pub trait ExprArrayBuilder: AttrsPropsBuilder {
+    fn new<I: IntoExpr>(elems: impl IntoIterator<Item = I>) -> Self;
+}
+
+impl ExprArrayBuilder for ExprArray {
+    fn new<I: IntoExpr>(elems: impl IntoIterator<Item = I>) -> Self {
+        expr_array(elems)
+    }
+}
+
 pub fn expr_assign(left: impl IntoExpr, right: impl IntoExpr) -> ExprAssign {
     ExprAssign {
         attrs: Default::default(),
@@ -97,6 +112,16 @@ pub fn expr_assign(left: impl IntoExpr, right: impl IntoExpr) -> ExprAssign {
 }
 
 attrs_builder!(ExprAssign);
+
+pub trait ExprAssignBuilder: AttrsPropsBuilder {
+    fn new(left: impl IntoExpr, right: impl IntoExpr) -> Self;
+}
+
+impl ExprAssignBuilder for ExprAssign {
+    fn new(left: impl IntoExpr, right: impl IntoExpr) -> Self {
+        expr_assign(left, right)
+    }
+}
 
 pub fn expr_async(block: impl Into<Block>) -> ExprAsync {
     ExprAsync {
@@ -109,11 +134,16 @@ pub fn expr_async(block: impl Into<Block>) -> ExprAsync {
 
 attrs_builder!(ExprAsync);
 
-pub trait ExprAsyncBuilder {
+pub trait ExprAsyncBuilder: AttrsPropsBuilder {
+    fn new(block: impl Into<Block>) -> Self;
     fn capture(self, capture: bool) -> Self;
 }
 
 impl ExprAsyncBuilder for ExprAsync {
+    fn new(block: impl Into<Block>) -> Self {
+        expr_async(block)
+    }
+
     fn capture(self, capture: bool) -> Self {
         Self {
             capture: capture.then(Default::default),
@@ -133,6 +163,16 @@ pub fn expr_await(base: impl IntoExpr) -> ExprAwait {
 
 attrs_builder!(ExprAwait);
 
+pub trait ExprAwaitBuilder: AttrsPropsBuilder {
+    fn new(base: impl IntoExpr) -> Self;
+}
+
+impl ExprAwaitBuilder for ExprAwait {
+    fn new(base: impl IntoExpr) -> Self {
+        expr_await(base)
+    }
+}
+
 pub fn expr_binary(left: impl IntoExpr, op: impl IntoBinOp, right: impl IntoExpr) -> ExprBinary {
     ExprBinary {
         attrs: Default::default(),
@@ -143,6 +183,16 @@ pub fn expr_binary(left: impl IntoExpr, op: impl IntoBinOp, right: impl IntoExpr
 }
 
 attrs_builder!(ExprBinary);
+
+pub trait ExprBinaryBuilder: AttrsPropsBuilder {
+    fn new(left: impl IntoExpr, op: impl IntoBinOp, right: impl IntoExpr) -> Self;
+}
+
+impl ExprBinaryBuilder for ExprBinary {
+    fn new(left: impl IntoExpr, op: impl IntoBinOp, right: impl IntoExpr) -> Self {
+        expr_binary(left, op, right)
+    }
+}
 
 pub fn expr_block(block: impl Into<Block>) -> ExprBlock {
     ExprBlock {
@@ -155,6 +205,16 @@ pub fn expr_block(block: impl Into<Block>) -> ExprBlock {
 attrs_builder!(ExprBlock);
 label_builder!(ExprBlock);
 
+pub trait ExprBlockBuilder: AttrsPropsBuilder + LabelPropsBuilder {
+    fn new(block: impl Into<Block>) -> Self;
+}
+
+impl ExprBlockBuilder for ExprBlock {
+    fn new(block: impl Into<Block>) -> Self {
+        expr_block(block)
+    }
+}
+
 pub fn expr_break() -> ExprBreak {
     ExprBreak {
         attrs: Default::default(),
@@ -166,12 +226,17 @@ pub fn expr_break() -> ExprBreak {
 
 attrs_builder!(ExprBreak);
 
-pub trait ExprBreakBuilder {
+pub trait ExprBreakBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
     fn label(self, label: impl Into<Lifetime>) -> Self;
     fn expr(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ExprBreakBuilder for ExprBreak {
+    fn new() -> Self {
+        expr_break()
+    }
+
     fn label(self, label: impl Into<Lifetime>) -> Self {
         Self {
             label: Some(label.into()),
@@ -198,6 +263,16 @@ pub fn expr_call<I: IntoExpr>(func: impl IntoExpr, args: impl IntoIterator<Item 
 
 attrs_builder!(ExprCall);
 
+pub trait ExprCallBuilder: AttrsPropsBuilder {
+    fn new<I: IntoExpr>(func: impl IntoExpr, args: impl IntoIterator<Item = I>) -> Self;
+}
+
+impl ExprCallBuilder for ExprCall {
+    fn new<I: IntoExpr>(func: impl IntoExpr, args: impl IntoIterator<Item = I>) -> Self {
+        expr_call(func, args)
+    }
+}
+
 pub fn expr_cast(expr: impl IntoExpr, ty: impl IntoType) -> ExprCast {
     ExprCast {
         attrs: Default::default(),
@@ -208,6 +283,16 @@ pub fn expr_cast(expr: impl IntoExpr, ty: impl IntoType) -> ExprCast {
 }
 
 attrs_builder!(ExprCast);
+
+pub trait ExprCastBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr, ty: impl IntoType) -> Self;
+}
+
+impl ExprCastBuilder for ExprCast {
+    fn new(expr: impl IntoExpr, ty: impl IntoType) -> Self {
+        expr_cast(expr, ty)
+    }
+}
 
 pub fn expr_closure<I: IntoPat>(
     inputs: impl IntoIterator<Item = I>,
@@ -231,7 +316,8 @@ pub fn expr_closure<I: IntoPat>(
 attrs_builder!(ExprClosure);
 output_builder!(ExprClosure);
 
-pub trait ExprClosureBuilder {
+pub trait ExprClosureBuilder: AttrsPropsBuilder + OutputPropsBuilder {
+    fn new<I: IntoPat>(inputs: impl IntoIterator<Item = I>, body: impl IntoExpr) -> Self;
     fn lifetimes(self, lifetimes: bool) -> Self;
     fn constness(self, constness: bool) -> Self;
     fn movability(self, movability: bool) -> Self;
@@ -240,6 +326,10 @@ pub trait ExprClosureBuilder {
 }
 
 impl ExprClosureBuilder for ExprClosure {
+    fn new<I: IntoPat>(inputs: impl IntoIterator<Item = I>, body: impl IntoExpr) -> Self {
+        expr_closure(inputs, body)
+    }
+
     fn lifetimes(self, lifetimes: bool) -> Self {
         Self {
             lifetimes: lifetimes.then(Default::default),
@@ -286,6 +376,16 @@ pub fn expr_const(block: impl Into<Block>) -> ExprConst {
 
 attrs_builder!(ExprConst);
 
+pub trait ExprConstBuilder: AttrsPropsBuilder {
+    fn new(block: impl Into<Block>) -> Self;
+}
+
+impl ExprConstBuilder for ExprConst {
+    fn new(block: impl Into<Block>) -> Self {
+        expr_const(block)
+    }
+}
+
 pub fn expr_continue() -> ExprContinue {
     ExprContinue {
         attrs: Default::default(),
@@ -296,11 +396,16 @@ pub fn expr_continue() -> ExprContinue {
 
 attrs_builder!(ExprContinue);
 
-pub trait ExprContinueBuilder {
+pub trait ExprContinueBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
     fn label(self, label: impl Into<Lifetime>) -> Self;
 }
 
 impl ExprContinueBuilder for ExprContinue {
+    fn new() -> Self {
+        expr_continue()
+    }
+
     fn label(self, label: impl Into<Lifetime>) -> Self {
         Self {
             label: Some(label.into()),
@@ -319,6 +424,16 @@ pub fn expr_field(base: impl IntoExpr, member: impl Into<Member>) -> ExprField {
 }
 
 attrs_builder!(ExprField);
+
+pub trait ExprFieldBuilder: AttrsPropsBuilder {
+    fn new(base: impl IntoExpr, member: impl Into<Member>) -> Self;
+}
+
+impl ExprFieldBuilder for ExprField {
+    fn new(base: impl IntoExpr, member: impl Into<Member>) -> Self {
+        expr_field(base, member)
+    }
+}
 
 pub fn expr_for_loop(
     pat: impl IntoPat,
@@ -339,6 +454,16 @@ pub fn expr_for_loop(
 attrs_builder!(ExprForLoop);
 label_builder!(ExprForLoop);
 
+pub trait ExprForLoopBuilder: AttrsPropsBuilder + LabelPropsBuilder {
+    fn new(pat: impl IntoPat, expr: impl IntoExpr, body: impl Into<Block>) -> Self;
+}
+
+impl ExprForLoopBuilder for ExprForLoop {
+    fn new(pat: impl IntoPat, expr: impl IntoExpr, body: impl Into<Block>) -> Self {
+        expr_for_loop(pat, expr, body)
+    }
+}
+
 pub fn expr_group(expr: impl IntoExpr) -> ExprGroup {
     ExprGroup {
         attrs: Default::default(),
@@ -348,6 +473,16 @@ pub fn expr_group(expr: impl IntoExpr) -> ExprGroup {
 }
 
 attrs_builder!(ExprGroup);
+
+pub trait ExprGroupBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr) -> Self;
+}
+
+impl ExprGroupBuilder for ExprGroup {
+    fn new(expr: impl IntoExpr) -> Self {
+        expr_group(expr)
+    }
+}
 
 pub fn expr_if(cond: impl IntoExpr, then_branch: impl Into<Block>) -> ExprIf {
     ExprIf {
@@ -361,11 +496,16 @@ pub fn expr_if(cond: impl IntoExpr, then_branch: impl Into<Block>) -> ExprIf {
 
 attrs_builder!(ExprIf);
 
-pub trait ExprIfBuilder {
+pub trait ExprIfBuilder: AttrsPropsBuilder {
+    fn new(cond: impl IntoExpr, then_branch: impl Into<Block>) -> Self;
     fn else_branch(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ExprIfBuilder for ExprIf {
+    fn new(cond: impl IntoExpr, then_branch: impl Into<Block>) -> Self {
+        expr_if(cond, then_branch)
+    }
+
     fn else_branch(self, expr: impl IntoExpr) -> Self {
         Self {
             else_branch: Some((Default::default(), expr.into_expr().into())),
@@ -385,6 +525,16 @@ pub fn expr_index(expr: impl IntoExpr, index: impl IntoExpr) -> ExprIndex {
 
 attrs_builder!(ExprIndex);
 
+pub trait ExprIndexBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr, index: impl IntoExpr) -> Self;
+}
+
+impl ExprIndexBuilder for ExprIndex {
+    fn new(expr: impl IntoExpr, index: impl IntoExpr) -> Self {
+        expr_index(expr, index)
+    }
+}
+
 pub fn expr_infer() -> ExprInfer {
     ExprInfer {
         attrs: Default::default(),
@@ -393,6 +543,16 @@ pub fn expr_infer() -> ExprInfer {
 }
 
 attrs_builder!(ExprInfer);
+
+pub trait ExprInferBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
+}
+
+impl ExprInferBuilder for ExprInfer {
+    fn new() -> Self {
+        expr_infer()
+    }
+}
 
 pub fn expr_let(pat: impl IntoPat, expr: impl IntoExpr) -> ExprLet {
     ExprLet {
@@ -406,6 +566,16 @@ pub fn expr_let(pat: impl IntoPat, expr: impl IntoExpr) -> ExprLet {
 
 attrs_builder!(ExprLet);
 
+pub trait ExprLetBuilder: AttrsPropsBuilder {
+    fn new(pat: impl IntoPat, expr: impl IntoExpr) -> Self;
+}
+
+impl ExprLetBuilder for ExprLet {
+    fn new(pat: impl IntoPat, expr: impl IntoExpr) -> Self {
+        expr_let(pat, expr)
+    }
+}
+
 pub fn expr_lit(lit: impl IntoLit) -> ExprLit {
     ExprLit {
         attrs: Default::default(),
@@ -414,6 +584,16 @@ pub fn expr_lit(lit: impl IntoLit) -> ExprLit {
 }
 
 attrs_builder!(ExprLit);
+
+pub trait ExprLitBuilder: AttrsPropsBuilder {
+    fn new(lit: impl IntoLit) -> Self;
+}
+
+impl ExprLitBuilder for ExprLit {
+    fn new(lit: impl IntoLit) -> Self {
+        expr_lit(lit)
+    }
+}
 
 pub fn expr_loop(body: impl Into<Block>) -> ExprLoop {
     ExprLoop {
@@ -427,6 +607,16 @@ pub fn expr_loop(body: impl Into<Block>) -> ExprLoop {
 attrs_builder!(ExprLoop);
 label_builder!(ExprLoop);
 
+pub trait ExprLoopBuilder: AttrsPropsBuilder + LabelPropsBuilder {
+    fn new(body: impl Into<Block>) -> Self;
+}
+
+impl ExprLoopBuilder for ExprLoop {
+    fn new(body: impl Into<Block>) -> Self {
+        expr_loop(body)
+    }
+}
+
 pub fn expr_macro(mac: impl Into<Macro>) -> ExprMacro {
     ExprMacro {
         attrs: Default::default(),
@@ -435,6 +625,16 @@ pub fn expr_macro(mac: impl Into<Macro>) -> ExprMacro {
 }
 
 attrs_builder!(ExprMacro);
+
+pub trait ExprMacroBuilder: AttrsPropsBuilder {
+    fn new(mac: impl Into<Macro>) -> Self;
+}
+
+impl ExprMacroBuilder for ExprMacro {
+    fn new(mac: impl Into<Macro>) -> Self {
+        expr_macro(mac)
+    }
+}
 
 pub fn expr_match(expr: impl IntoExpr, arms: impl IntoIterator<Item = Arm>) -> ExprMatch {
     ExprMatch {
@@ -447,6 +647,16 @@ pub fn expr_match(expr: impl IntoExpr, arms: impl IntoIterator<Item = Arm>) -> E
 }
 
 attrs_builder!(ExprMatch);
+
+pub trait ExprMatchBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr, arms: impl IntoIterator<Item = Arm>) -> Self;
+}
+
+impl ExprMatchBuilder for ExprMatch {
+    fn new(expr: impl IntoExpr, arms: impl IntoIterator<Item = Arm>) -> Self {
+        expr_match(expr, arms)
+    }
+}
 
 pub fn expr_method_call<A: IntoExpr>(
     receiver: impl IntoExpr,
@@ -466,11 +676,24 @@ pub fn expr_method_call<A: IntoExpr>(
 
 attrs_builder!(ExprMethodCall);
 
-pub trait ExprMethodCallBuilder {
+pub trait ExprMethodCallBuilder: AttrsPropsBuilder {
+    fn new<A: IntoExpr>(
+        receiver: impl IntoExpr,
+        method: impl IntoIdent,
+        args: impl IntoIterator<Item = A>,
+    ) -> Self;
     fn turbofish(self, args: impl Into<AngleBracketedGenericArguments>) -> Self;
 }
 
 impl ExprMethodCallBuilder for ExprMethodCall {
+    fn new<A: IntoExpr>(
+        receiver: impl IntoExpr,
+        method: impl IntoIdent,
+        args: impl IntoIterator<Item = A>,
+    ) -> Self {
+        expr_method_call(receiver, method, args)
+    }
+
     fn turbofish(self, args: impl Into<AngleBracketedGenericArguments>) -> Self {
         Self {
             turbofish: Some(args.into()),
@@ -489,6 +712,10 @@ pub fn expr_paren(expr: impl IntoExpr) -> ExprParen {
 
 attrs_builder!(ExprParen);
 
+pub trait ExprParenBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr) -> Self;
+}
+
 pub fn expr_path(path: impl IntoPath) -> ExprPath {
     ExprPath {
         attrs: Default::default(),
@@ -499,6 +726,16 @@ pub fn expr_path(path: impl IntoPath) -> ExprPath {
 
 attrs_builder!(ExprPath);
 qself_builder!(ExprPath);
+
+pub trait ExprPathBuilder: AttrsPropsBuilder + QSelfPropsBuilder {
+    fn new(path: impl IntoPath) -> Self;
+}
+
+impl ExprPathBuilder for ExprPath {
+    fn new(path: impl IntoPath) -> Self {
+        expr_path(path)
+    }
+}
 
 pub fn expr_range(limits: impl IntoRangeLimits) -> ExprRange {
     ExprRange {
@@ -511,12 +748,17 @@ pub fn expr_range(limits: impl IntoRangeLimits) -> ExprRange {
 
 attrs_builder!(ExprRange);
 
-pub trait ExprRangeBuilder {
+pub trait ExprRangeBuilder: AttrsPropsBuilder {
+    fn new(limits: impl IntoRangeLimits) -> Self;
     fn start(self, expr: impl IntoExpr) -> Self;
     fn end(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ExprRangeBuilder for ExprRange {
+    fn new(limits: impl IntoRangeLimits) -> Self {
+        expr_range(limits)
+    }
+
     fn start(self, expr: impl IntoExpr) -> Self {
         Self {
             end: Some(expr.into_expr().into()),
@@ -544,6 +786,16 @@ pub fn expr_reference(expr: impl IntoExpr) -> ExprReference {
 attrs_builder!(ExprReference);
 mutability_builder!(ExprReference);
 
+pub trait ExprReferenceBuilder: AttrsPropsBuilder + MutabilityPropsBuilder {
+    fn new(expr: impl IntoExpr) -> Self;
+}
+
+impl ExprReferenceBuilder for ExprReference {
+    fn new(expr: impl IntoExpr) -> Self {
+        expr_reference(expr)
+    }
+}
+
 pub fn expr_repeat(expr: impl IntoExpr, len: impl IntoExpr) -> ExprRepeat {
     ExprRepeat {
         attrs: Default::default(),
@@ -556,6 +808,16 @@ pub fn expr_repeat(expr: impl IntoExpr, len: impl IntoExpr) -> ExprRepeat {
 
 attrs_builder!(ExprRepeat);
 
+pub trait ExprRepeatBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr, len: impl IntoExpr) -> Self;
+}
+
+impl ExprRepeatBuilder for ExprRepeat {
+    fn new(expr: impl IntoExpr, len: impl IntoExpr) -> Self {
+        expr_repeat(expr, len)
+    }
+}
+
 pub fn expr_return() -> ExprReturn {
     ExprReturn {
         attrs: Default::default(),
@@ -566,11 +828,16 @@ pub fn expr_return() -> ExprReturn {
 
 attrs_builder!(ExprReturn);
 
-pub trait ExprReturnBuilder {
+pub trait ExprReturnBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
     fn expr(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ExprReturnBuilder for ExprReturn {
+    fn new() -> Self {
+        expr_return()
+    }
+
     fn expr(self, expr: impl IntoExpr) -> Self {
         Self {
             expr: Some(expr.into_expr().into()),
@@ -597,12 +864,17 @@ pub fn expr_struct<F: Into<FieldValue>>(
 attrs_builder!(ExprStruct);
 qself_builder!(ExprStruct);
 
-pub trait ExprStructBuilder {
+pub trait ExprStructBuilder: AttrsPropsBuilder + QSelfPropsBuilder {
+    fn new<F: Into<FieldValue>>(path: impl IntoPath, fields: impl IntoIterator<Item = F>) -> Self;
     fn dot2_token(self, dot2_token: bool) -> Self;
     fn rest(self, rest: impl IntoExpr) -> Self;
 }
 
 impl ExprStructBuilder for ExprStruct {
+    fn new<F: Into<FieldValue>>(path: impl IntoPath, fields: impl IntoIterator<Item = F>) -> Self {
+        expr_struct(path, fields)
+    }
+
     fn dot2_token(self, dot2_token: bool) -> Self {
         Self {
             dot2_token: dot2_token.then(Default::default),
@@ -629,6 +901,16 @@ pub fn expr_try(expr: impl IntoExpr) -> ExprTry {
 
 attrs_builder!(ExprTry);
 
+pub trait ExprTryBuilder: AttrsPropsBuilder {
+    fn new(expr: impl IntoExpr) -> Self;
+}
+
+impl ExprTryBuilder for ExprTry {
+    fn new(expr: impl IntoExpr) -> Self {
+        expr_try(expr)
+    }
+}
+
 pub fn expr_try_block(block: impl Into<Block>) -> ExprTryBlock {
     ExprTryBlock {
         attrs: vec![],
@@ -638,6 +920,16 @@ pub fn expr_try_block(block: impl Into<Block>) -> ExprTryBlock {
 }
 
 attrs_builder!(ExprTryBlock);
+
+pub trait ExprTryBlockBuilder: AttrsPropsBuilder {
+    fn new(block: impl Into<Block>) -> Self;
+}
+
+impl ExprTryBlockBuilder for ExprTryBlock {
+    fn new(block: impl Into<Block>) -> Self {
+        expr_try_block(block)
+    }
+}
 
 pub fn expr_tuple<E: IntoExpr>(elems: impl IntoIterator<Item = E>) -> ExprTuple {
     ExprTuple {
@@ -649,6 +941,16 @@ pub fn expr_tuple<E: IntoExpr>(elems: impl IntoIterator<Item = E>) -> ExprTuple 
 
 attrs_builder!(ExprTuple);
 
+pub trait ExprTupleBuilder: AttrsPropsBuilder {
+    fn new<E: IntoExpr>(elems: impl IntoIterator<Item = E>) -> Self;
+}
+
+impl ExprTupleBuilder for ExprTuple {
+    fn new<E: IntoExpr>(elems: impl IntoIterator<Item = E>) -> Self {
+        expr_tuple(elems)
+    }
+}
+
 pub fn expr_unary(op: impl IntoUnOp, expr: impl IntoExpr) -> ExprUnary {
     ExprUnary {
         attrs: Default::default(),
@@ -659,6 +961,16 @@ pub fn expr_unary(op: impl IntoUnOp, expr: impl IntoExpr) -> ExprUnary {
 
 attrs_builder!(ExprUnary);
 
+pub trait ExprUnaryBuilder: AttrsPropsBuilder {
+    fn new(op: impl IntoUnOp, expr: impl IntoExpr) -> Self;
+}
+
+impl ExprUnaryBuilder for ExprUnary {
+    fn new(op: impl IntoUnOp, expr: impl IntoExpr) -> Self {
+        expr_unary(op, expr)
+    }
+}
+
 pub fn expr_unsafe(block: impl Into<Block>) -> ExprUnsafe {
     ExprUnsafe {
         attrs: Default::default(),
@@ -668,6 +980,16 @@ pub fn expr_unsafe(block: impl Into<Block>) -> ExprUnsafe {
 }
 
 attrs_builder!(ExprUnsafe);
+
+pub trait ExprUnsafeBuilder: AttrsPropsBuilder {
+    fn new(block: impl Into<Block>) -> Self;
+}
+
+impl ExprUnsafeBuilder for ExprUnsafe {
+    fn new(block: impl Into<Block>) -> Self {
+        expr_unsafe(block)
+    }
+}
 
 pub fn expr_while(cond: impl IntoExpr, body: impl Into<Block>) -> ExprWhile {
     ExprWhile {
@@ -682,6 +1004,16 @@ pub fn expr_while(cond: impl IntoExpr, body: impl Into<Block>) -> ExprWhile {
 attrs_builder!(ExprWhile);
 label_builder!(ExprWhile);
 
+pub trait ExprWhileBuilder: AttrsPropsBuilder + LabelPropsBuilder {
+    fn new(cond: impl IntoExpr, body: impl Into<Block>) -> Self;
+}
+
+impl ExprWhileBuilder for ExprWhile {
+    fn new(cond: impl IntoExpr, body: impl Into<Block>) -> Self {
+        expr_while(cond, body)
+    }
+}
+
 pub fn expr_yield() -> ExprYield {
     ExprYield {
         attrs: Default::default(),
@@ -692,11 +1024,16 @@ pub fn expr_yield() -> ExprYield {
 
 attrs_builder!(ExprYield);
 
-pub trait ExprYieldBuilder {
+pub trait ExprYieldBuilder: AttrsPropsBuilder {
+    fn new() -> Self;
     fn expr(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ExprYieldBuilder for ExprYield {
+    fn new() -> Self {
+        expr_yield()
+    }
+
     fn expr(self, expr: impl IntoExpr) -> Self {
         Self {
             expr: Some(expr.into_expr().into()),
@@ -705,8 +1042,18 @@ impl ExprYieldBuilder for ExprYield {
     }
 }
 
-pub fn index(index: impl Into<usize>) -> Index {
-    Index::from(index.into())
+pub fn index(i: impl Into<usize>) -> Index {
+    Index::from(i.into())
+}
+
+pub trait IndexBuilder {
+    fn new(index: impl Into<usize>) -> Self;
+}
+
+impl IndexBuilder for Index {
+    fn new(i: impl Into<usize>) -> Self {
+        index(i)
+    }
 }
 
 pub fn field_value(member: impl Into<Member>, expr: impl IntoExpr) -> FieldValue {
@@ -720,10 +1067,30 @@ pub fn field_value(member: impl Into<Member>, expr: impl IntoExpr) -> FieldValue
 
 attrs_builder!(FieldValue);
 
+pub trait FieldValueBuilder: AttrsPropsBuilder {
+    fn new(member: impl Into<Member>, expr: impl IntoExpr) -> Self;
+}
+
+impl FieldValueBuilder for FieldValue {
+    fn new(member: impl Into<Member>, expr: impl IntoExpr) -> Self {
+        field_value(member, expr)
+    }
+}
+
 pub fn label(name: impl Into<Lifetime>) -> Label {
     Label {
         name: name.into(),
         colon_token: Default::default(),
+    }
+}
+
+pub trait LabelBuilder {
+    fn new(name: impl Into<Lifetime>) -> Self;
+}
+
+impl LabelBuilder for Label {
+    fn new(name: impl Into<Lifetime>) -> Self {
+        label(name)
     }
 }
 
@@ -740,11 +1107,16 @@ pub fn arm(pat: impl IntoPat, body: impl IntoExpr) -> Arm {
 
 attrs_builder!(Arm);
 
-pub trait ArmBuilder {
+pub trait ArmBuilder: AttrsPropsBuilder {
+    fn new(pat: impl IntoPat, body: impl IntoExpr) -> Self;
     fn guard(self, expr: impl IntoExpr) -> Self;
 }
 
 impl ArmBuilder for Arm {
+    fn new(pat: impl IntoPat, body: impl IntoExpr) -> Self {
+        arm(pat, body)
+    }
+
     fn guard(self, expr: impl IntoExpr) -> Self {
         Self {
             guard: Some((Default::default(), expr.into_expr().into())),

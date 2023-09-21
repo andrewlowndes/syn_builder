@@ -43,6 +43,16 @@ pub fn vis_restricted(path: impl IntoPath) -> VisRestricted {
     }
 }
 
+pub trait VisRestrictedBuilder {
+    fn new(path: impl IntoPath) -> Self;
+}
+
+impl VisRestrictedBuilder for VisRestricted {
+    fn new(path: impl IntoPath) -> Self {
+        vis_restricted(path)
+    }
+}
+
 pub fn field_mutability_none_variant() -> FieldMutability {
     FieldMutability::None
 }

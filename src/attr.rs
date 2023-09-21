@@ -16,10 +16,14 @@ pub fn attr_style_inner() -> AttrStyle {
 }
 
 pub trait AttributeBuilder {
+    fn new(meta: impl IntoMeta) -> Self;
     fn style(self, inside: bool) -> Self;
 }
 
 impl AttributeBuilder for Attribute {
+    fn new(meta: impl IntoMeta) -> Self {
+        attribute(meta)
+    }
     fn style(self, inside: bool) -> Self {
         Self {
             style: if inside {
@@ -70,6 +74,16 @@ pub fn meta_list(
     }
 }
 
+pub trait MetaListBuilder {
+    fn new(path: impl IntoPath, delimiter: impl IntoMacroDelimiter, tokens: TokenStream) -> Self;
+}
+
+impl MetaListBuilder for MetaList {
+    fn new(path: impl IntoPath, delimiter: impl IntoMacroDelimiter, tokens: TokenStream) -> Self {
+        meta_list(path, delimiter, tokens)
+    }
+}
+
 impl IntoMeta for MetaList {
     fn into_meta(self) -> Meta {
         Meta::List(self)
@@ -87,5 +101,15 @@ pub fn meta_name_value(path: impl IntoPath, value: impl IntoExpr) -> MetaNameVal
 impl IntoMeta for MetaNameValue {
     fn into_meta(self) -> Meta {
         Meta::NameValue(self)
+    }
+}
+
+pub trait MetaNameValueBuilder {
+    fn new(path: impl IntoPath, value: impl IntoExpr) -> Self;
+}
+
+impl MetaNameValueBuilder for MetaNameValue {
+    fn new(path: impl IntoPath, value: impl IntoExpr) -> Self {
+        meta_name_value(path, value)
     }
 }

@@ -1,13 +1,13 @@
 # Syn builder
 Builder functions for `syn` structures and enums to ease the generation of Rust code.
 
-Note: only syn structures are used, there no intermediate structs created.
+Note: only syn structures are creating using the builder methods - there no intermediate structs to manage.
 
 ## Usage
 1. Add to your Cargo.toml file
 ```toml
 [dependencies]
-syn_builder = "0.1.0"
+syn_builder = "0.2.0"
 ```
 
 2. Import builder functions and create syn objects

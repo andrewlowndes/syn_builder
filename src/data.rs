@@ -1,4 +1,8 @@
-use crate::{attrs_builder, vis_builder, IntoExpr, IntoIdent, IntoType};
+use crate::{
+    attrs_builder,
+    macros::{AttrsPropsBuilder, VisPropsBuilder},
+    vis_builder, IntoExpr, IntoIdent, IntoType,
+};
 use syn::{Field, FieldMutability, Fields, FieldsNamed, FieldsUnnamed, Variant, Visibility};
 
 pub fn variant(ident: impl IntoIdent) -> Variant {
@@ -12,12 +16,17 @@ pub fn variant(ident: impl IntoIdent) -> Variant {
 
 attrs_builder!(Variant);
 
-pub trait VariantBuilder {
+pub trait VariantBuilder: AttrsPropsBuilder {
+    fn new(ident: impl IntoIdent) -> Self;
     fn discriminant(self, expr: impl IntoExpr) -> Self;
     fn fields(self, fields: impl IntoFields) -> Self;
 }
 
 impl VariantBuilder for Variant {
+    fn new(ident: impl IntoIdent) -> Self {
+        variant(ident)
+    }
+
     fn discriminant(self, expr: impl IntoExpr) -> Self {
         Self {
             discriminant: Some((Default::default(), expr.into_expr())),
@@ -50,6 +59,16 @@ pub fn fields_named<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Fiel
     }
 }
 
+pub trait FieldsNamedBuilder {
+    fn new<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Self;
+}
+
+impl FieldsNamedBuilder for FieldsNamed {
+    fn new<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Self {
+        fields_named(fields)
+    }
+}
+
 impl IntoFields for FieldsNamed {
     fn into_fields(self) -> Fields {
         Fields::Named(self)
@@ -60,6 +79,16 @@ pub fn fields_unamed<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Fie
     FieldsUnnamed {
         paren_token: Default::default(),
         unnamed: FromIterator::from_iter(fields.into_iter().map(Into::into)),
+    }
+}
+
+pub trait FieldsUnamedBuilder {
+    fn new<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Self;
+}
+
+impl FieldsUnamedBuilder for FieldsUnnamed {
+    fn new<F: Into<Field>>(fields: impl IntoIterator<Item = F>) -> Self {
+        fields_unamed(fields)
     }
 }
 
@@ -83,11 +112,16 @@ pub fn field(ty: impl IntoType) -> Field {
 attrs_builder!(Field);
 vis_builder!(Field);
 
-pub trait FieldBuilder {
+pub trait FieldBuilder: AttrsPropsBuilder + VisPropsBuilder {
+    fn new(ty: impl IntoType) -> Self;
     fn ident(self, ident: impl IntoIdent) -> Self;
 }
 
 impl FieldBuilder for Field {
+    fn new(ty: impl IntoType) -> Self {
+        field(ty)
+    }
+
     fn ident(self, ident: impl IntoIdent) -> Self {
         Self {
             ident: Some(ident.into_ident()),

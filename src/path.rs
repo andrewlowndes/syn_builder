@@ -1,4 +1,7 @@
-use crate::{output_builder, IntoExpr, IntoIdent, IntoMeta, IntoType, IntoTypeParamBound};
+use crate::{
+    macros::OutputPropsBuilder, output_builder, IntoExpr, IntoIdent, IntoMeta, IntoType,
+    IntoTypeParamBound,
+};
 use proc_macro2::Ident;
 use syn::{
     AngleBracketedGenericArguments, AssocConst, AssocType, Constraint, Expr, GenericArgument,
@@ -61,10 +64,15 @@ impl IntoPath for &str {
 }
 
 pub trait PathBuilder {
+    fn new<S: Into<PathSegment>>(segments: impl IntoIterator<Item = S>) -> Self;
     fn leading_colon(self, leading_colon: bool) -> Self;
 }
 
 impl PathBuilder for Path {
+    fn new<S: Into<PathSegment>>(segments: impl IntoIterator<Item = S>) -> Self {
+        path(segments)
+    }
+
     fn leading_colon(self, leading_colon: bool) -> Self {
         Self {
             leading_colon: leading_colon.then(Default::default),
@@ -81,10 +89,15 @@ pub fn path_segment(ident: impl IntoIdent) -> PathSegment {
 }
 
 pub trait PathSeqmentBuilder {
+    fn new(ident: impl IntoIdent) -> Self;
     fn arguments(self, arguments: impl IntoPathArguments) -> Self;
 }
 
 impl PathSeqmentBuilder for PathSegment {
+    fn new(ident: impl IntoIdent) -> Self {
+        path_segment(ident)
+    }
+
     fn arguments(self, arguments: impl IntoPathArguments) -> Self {
         Self {
             arguments: arguments.into_path_arguments(),
@@ -170,10 +183,15 @@ impl IntoPathArguments for AngleBracketedGenericArguments {
 }
 
 pub trait AngleBracketedGenericArgumentsBuilder {
+    fn new<A: IntoGenericArgument>(args: impl IntoIterator<Item = A>) -> Self;
     fn colon2_token(self, colon2_token: bool) -> Self;
 }
 
 impl AngleBracketedGenericArgumentsBuilder for AngleBracketedGenericArguments {
+    fn new<A: IntoGenericArgument>(args: impl IntoIterator<Item = A>) -> Self {
+        angle_bracketed_generic_arguments(args)
+    }
+
     fn colon2_token(self, colon2_token: bool) -> Self {
         Self {
             colon2_token: colon2_token.then(Default::default),
@@ -193,6 +211,16 @@ pub fn assoc_type(ident: impl IntoIdent, ty: impl IntoType) -> AssocType {
 
 generics_builder!(AssocType);
 
+pub trait AssocTypeBuilder: PathGenericsBuilder {
+    fn new(ident: impl IntoIdent, ty: impl IntoType) -> Self;
+}
+
+impl AssocTypeBuilder for AssocType {
+    fn new(ident: impl IntoIdent, ty: impl IntoType) -> Self {
+        assoc_type(ident, ty)
+    }
+}
+
 pub fn assoc_const(ident: impl IntoIdent, value: impl IntoExpr) -> AssocConst {
     AssocConst {
         ident: ident.into_ident(),
@@ -203,6 +231,16 @@ pub fn assoc_const(ident: impl IntoIdent, value: impl IntoExpr) -> AssocConst {
 }
 
 generics_builder!(AssocConst);
+
+pub trait AssocConstBuilder: PathGenericsBuilder {
+    fn new(ident: impl IntoIdent, value: impl IntoExpr) -> Self;
+}
+
+impl AssocConstBuilder for AssocConst {
+    fn new(ident: impl IntoIdent, value: impl IntoExpr) -> Self {
+        assoc_const(ident, value)
+    }
+}
 
 pub fn constraint<B: IntoTypeParamBound>(
     ident: impl IntoIdent,
@@ -222,6 +260,22 @@ pub fn constraint<B: IntoTypeParamBound>(
 
 generics_builder!(Constraint);
 
+pub trait ConstraintBuilder: PathGenericsBuilder {
+    fn new<B: IntoTypeParamBound>(
+        ident: impl IntoIdent,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self;
+}
+
+impl ConstraintBuilder for Constraint {
+    fn new<B: IntoTypeParamBound>(
+        ident: impl IntoIdent,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self {
+        constraint(ident, bounds)
+    }
+}
+
 pub fn parenthesized_generic_arguments<I: IntoType>(
     inputs: impl IntoIterator<Item = I>,
 ) -> ParenthesizedGenericArguments {
@@ -233,6 +287,16 @@ pub fn parenthesized_generic_arguments<I: IntoType>(
 }
 
 output_builder!(ParenthesizedGenericArguments);
+
+pub trait ParenthesizedGenericArgumentsBuilder: OutputPropsBuilder {
+    fn new<I: IntoType>(inputs: impl IntoIterator<Item = I>) -> Self;
+}
+
+impl ParenthesizedGenericArgumentsBuilder for ParenthesizedGenericArguments {
+    fn new<I: IntoType>(inputs: impl IntoIterator<Item = I>) -> Self {
+        parenthesized_generic_arguments(inputs)
+    }
+}
 
 impl IntoPathArguments for ParenthesizedGenericArguments {
     fn into_path_arguments(self) -> PathArguments {
@@ -251,11 +315,16 @@ pub fn q_self(ty: impl IntoType, position: impl Into<usize>) -> QSelf {
 }
 
 pub trait QSelfBuilder {
+    fn new(ty: impl IntoType, position: impl Into<usize>) -> Self;
     #[allow(clippy::wrong_self_convention)]
     fn as_token(self, as_token: bool) -> Self;
 }
 
 impl QSelfBuilder for QSelf {
+    fn new(ty: impl IntoType, position: impl Into<usize>) -> Self {
+        q_self(ty, position)
+    }
+
     fn as_token(self, as_token: bool) -> Self {
         Self {
             as_token: as_token.then(Default::default),

@@ -2,7 +2,7 @@ use syn::{Attribute, Label, QSelf};
 
 use crate::{IntoType, IntoVisibility};
 
-pub trait AttrsBuilder {
+pub trait AttrsPropsBuilder {
     fn attr(self, attr: impl Into<Attribute>) -> Self;
     fn attrs<A: Into<Attribute>>(self, attrs: impl IntoIterator<Item = A>) -> Self;
 }
@@ -11,7 +11,7 @@ pub trait AttrsBuilder {
 macro_rules! attrs_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::AttrsBuilder for $name {
+            impl $crate::macros::AttrsPropsBuilder for $name {
                 fn attr(mut self, attr: impl Into<syn::Attribute>) -> Self {
                     self.attrs.push(attr.into());
                     self
@@ -28,7 +28,7 @@ macro_rules! attrs_builder {
     }
 }
 
-pub trait MutabilityBuilder {
+pub trait MutabilityPropsBuilder {
     fn mutability(self, mutability: bool) -> Self;
 }
 
@@ -36,7 +36,7 @@ pub trait MutabilityBuilder {
 macro_rules! mutability_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::MutabilityBuilder for $name {
+            impl $crate::macros::MutabilityPropsBuilder for $name {
                 fn mutability(self, mutability: bool) -> Self {
                     Self {
                         mutability: mutability.then(Default::default),
@@ -48,7 +48,7 @@ macro_rules! mutability_builder {
     }
 }
 
-pub trait QSelfBuilder {
+pub trait QSelfPropsBuilder {
     fn qself(self, qself: impl Into<QSelf>) -> Self;
 }
 
@@ -56,7 +56,7 @@ pub trait QSelfBuilder {
 macro_rules! qself_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::QSelfBuilder for $name {
+            impl $crate::macros::QSelfPropsBuilder for $name {
                 fn qself(self, qself: impl Into<syn::QSelf>) -> Self {
                     Self {
                         qself: Some(qself.into()),
@@ -68,7 +68,7 @@ macro_rules! qself_builder {
     }
 }
 
-pub trait LabelBuilder {
+pub trait LabelPropsBuilder {
     fn label(self, label: impl Into<Label>) -> Self;
 }
 
@@ -76,7 +76,7 @@ pub trait LabelBuilder {
 macro_rules! label_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::LabelBuilder for $name {
+            impl $crate::macros::LabelPropsBuilder for $name {
                 fn label(self, label: impl Into<syn::Label>) -> Self {
                     Self {
                         label: Some(label.into()),
@@ -88,7 +88,7 @@ macro_rules! label_builder {
     }
 }
 
-pub trait VisBuilder {
+pub trait VisPropsBuilder {
     fn vis(self, vis: impl IntoVisibility) -> Self;
 }
 
@@ -96,7 +96,7 @@ pub trait VisBuilder {
 macro_rules! vis_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::VisBuilder for $name {
+            impl $crate::macros::VisPropsBuilder for $name {
                 fn vis(self, vis: impl $crate::IntoVisibility) -> Self {
                     Self { vis: vis.into_visibility(), ..self }
                 }
@@ -105,7 +105,7 @@ macro_rules! vis_builder {
     }
 }
 
-pub trait OutputBuilder {
+pub trait OutputPropsBuilder {
     fn output(self, ty: impl IntoType) -> Self;
 }
 
@@ -113,7 +113,7 @@ pub trait OutputBuilder {
 macro_rules! output_builder {
     ($($name:ident),+) => {
         $(
-            impl $crate::macros::OutputBuilder for $name {
+            impl $crate::macros::OutputPropsBuilder for $name {
                 fn output(self, ty: impl $crate::IntoType) -> Self {
                     Self {
                         output: syn::ReturnType::Type(Default::default(), ty.into_type().into()),

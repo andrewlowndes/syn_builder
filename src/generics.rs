@@ -1,4 +1,4 @@
-use crate::{attrs_builder, IntoExpr, IntoIdent, IntoPath, IntoType};
+use crate::{attrs_builder, macros::AttrsPropsBuilder, IntoExpr, IntoIdent, IntoPath, IntoType};
 use proc_macro2::TokenStream;
 use syn::{
     BoundLifetimes, ConstParam, GenericParam, Generics, Lifetime, LifetimeParam, PredicateLifetime,
@@ -18,10 +18,14 @@ pub fn generics<P: IntoGenericParam>(params: impl IntoIterator<Item = P>) -> Gen
 }
 
 pub trait GenericsBuilder {
+    fn new<P: IntoGenericParam>(params: impl IntoIterator<Item = P>) -> Self;
     fn where_clause(self, where_clause: impl Into<WhereClause>) -> Self;
 }
 
 impl GenericsBuilder for Generics {
+    fn new<P: IntoGenericParam>(params: impl IntoIterator<Item = P>) -> Self {
+        generics(params)
+    }
     fn where_clause(self, where_clause: impl Into<WhereClause>) -> Self {
         Self {
             where_clause: Some(where_clause.into()),
@@ -57,11 +61,16 @@ impl IntoGenericParam for LifetimeParam {
     }
 }
 
-pub trait LifetimeParamBuilder {
+pub trait LifetimeParamBuilder: AttrsPropsBuilder {
+    fn new(lifetime: impl Into<Lifetime>) -> Self;
     fn bounds<B: Into<Lifetime>>(self, bounds: impl IntoIterator<Item = B>) -> Self;
 }
 
 impl LifetimeParamBuilder for LifetimeParam {
+    fn new(lifetime: impl Into<Lifetime>) -> Self {
+        lifetime_param(lifetime)
+    }
+
     fn bounds<B: Into<Lifetime>>(self, bounds: impl IntoIterator<Item = B>) -> Self {
         Self {
             colon_token: Some(Default::default()),
@@ -90,12 +99,17 @@ impl IntoGenericParam for TypeParam {
     }
 }
 
-pub trait TypeParamBuilder {
+pub trait TypeParamBuilder: AttrsPropsBuilder {
+    fn new(ident: impl IntoIdent) -> Self;
     fn bounds<B: IntoTypeParamBound>(self, bounds: impl IntoIterator<Item = B>) -> Self;
     fn default(self, default: impl IntoType) -> Self;
 }
 
 impl TypeParamBuilder for TypeParam {
+    fn new(ident: impl IntoIdent) -> Self {
+        type_param(ident)
+    }
+
     fn bounds<B: IntoTypeParamBound>(self, bounds: impl IntoIterator<Item = B>) -> Self {
         Self {
             colon_token: Some(Default::default()),
@@ -137,11 +151,16 @@ impl IntoGenericParam for ConstParam {
     }
 }
 
-pub trait ConstParamBuilder {
+pub trait ConstParamBuilder: AttrsPropsBuilder {
+    fn new(ident: impl IntoIdent, ty: impl IntoType) -> Self;
     fn default(self, default: impl IntoExpr) -> Self;
 }
 
 impl ConstParamBuilder for ConstParam {
+    fn new(ident: impl IntoIdent, ty: impl IntoType) -> Self {
+        const_param(ident, ty)
+    }
+
     fn default(self, default: impl IntoExpr) -> Self {
         Self {
             eq_token: Some(Default::default()),
@@ -161,6 +180,16 @@ pub fn bound_lifetimes<L: IntoGenericParam>(
                 .map(IntoGenericParam::into_generic_param),
         ),
         ..Default::default()
+    }
+}
+
+pub trait BoundLifetimesBuilder {
+    fn new<L: IntoGenericParam>(lifetimes: impl IntoIterator<Item = L>) -> Self;
+}
+
+impl BoundLifetimesBuilder for BoundLifetimes {
+    fn new<L: IntoGenericParam>(lifetimes: impl IntoIterator<Item = L>) -> Self {
+        bound_lifetimes(lifetimes)
     }
 }
 
@@ -202,11 +231,16 @@ impl IntoTypeParamBound for TraitBound {
 }
 
 pub trait TraitBoundBuilder {
+    fn new(path: impl IntoPath) -> Self;
     fn lifetimes(self, lifetimes: impl Into<BoundLifetimes>) -> Self;
     fn modifier(self, maybe: bool) -> Self;
 }
 
 impl TraitBoundBuilder for TraitBound {
+    fn new(path: impl IntoPath) -> Self {
+        trait_bound(path)
+    }
+
     fn lifetimes(self, lifetimes: impl Into<BoundLifetimes>) -> Self {
         Self {
             lifetimes: Some(lifetimes.into()),
@@ -247,6 +281,16 @@ impl IntoWherePredicate for WherePredicate {
     }
 }
 
+pub trait WhereClauseBuilder {
+    fn new<P: IntoWherePredicate>(predicates: impl IntoIterator<Item = P>) -> Self;
+}
+
+impl WhereClauseBuilder for WhereClause {
+    fn new<P: IntoWherePredicate>(predicates: impl IntoIterator<Item = P>) -> Self {
+        where_clause(predicates)
+    }
+}
+
 pub fn predicate_lifetime<B: Into<Lifetime>>(
     lifetime: impl Into<Lifetime>,
     bounds: impl IntoIterator<Item = B>,
@@ -261,6 +305,22 @@ pub fn predicate_lifetime<B: Into<Lifetime>>(
 impl IntoWherePredicate for PredicateLifetime {
     fn into_where_predicate(self) -> WherePredicate {
         WherePredicate::Lifetime(self)
+    }
+}
+
+pub trait PredicateLifetimeBuilder {
+    fn new<B: Into<Lifetime>>(
+        lifetime: impl Into<Lifetime>,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self;
+}
+
+impl PredicateLifetimeBuilder for PredicateLifetime {
+    fn new<B: Into<Lifetime>>(
+        lifetime: impl Into<Lifetime>,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self {
+        predicate_lifetime(lifetime, bounds)
     }
 }
 
@@ -287,10 +347,21 @@ impl IntoWherePredicate for PredicateType {
 }
 
 pub trait PredicateTypeBuilder {
+    fn new<B: IntoTypeParamBound>(
+        bounded_ty: impl IntoType,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self;
     fn lifetimes(self, lifetimes: impl Into<BoundLifetimes>) -> Self;
 }
 
 impl PredicateTypeBuilder for PredicateType {
+    fn new<B: IntoTypeParamBound>(
+        bounded_ty: impl IntoType,
+        bounds: impl IntoIterator<Item = B>,
+    ) -> Self {
+        predicate_type(bounded_ty, bounds)
+    }
+
     fn lifetimes(self, lifetimes: impl Into<BoundLifetimes>) -> Self {
         Self {
             lifetimes: Some(lifetimes.into()),
